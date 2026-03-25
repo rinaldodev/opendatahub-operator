@@ -108,9 +108,9 @@ func WithOperatorCert() BootstrapConfigOpt {
 func DefaultBootstrapConfig(opts ...BootstrapConfigOpt) BootstrapConfig {
 	config := BootstrapConfig{
 		IssuerName:           "opendatahub-selfsigned-issuer",
-		CertName:             "opendatahub-ca",
-		CertManagerNamespace: "cert-manager",
-		CAIssuerName:         "opendatahub-ca-issuer",
+		CertName:             envOrDefault(EnvCertName, "opendatahub-ca"),
+		CertManagerNamespace: envOrDefault(EnvCertManagerNS, "cert-manager"),
+		CAIssuerName:         envOrDefault(EnvCAIssuerName, "opendatahub-ca-issuer"),
 	}
 	for _, opt := range opts {
 		opt(&config)
