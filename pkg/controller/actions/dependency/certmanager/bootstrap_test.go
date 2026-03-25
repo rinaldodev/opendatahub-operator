@@ -67,6 +67,66 @@ func getWebhookCertificate(ctx context.Context, cli client.Client, name, namespa
 	return u, cli.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, u)
 }
 
+// TestDefaultBootstrapConfigEnvOverrides verifies that DefaultBootstrapConfig honors RHAI_* env
+// var overrides for CertName, CertManagerNamespace, and CAIssuerName. Fixes RHOAIENG-52924.
+func TestDefaultBootstrapConfigEnvOverrides(t *testing.T) {
+	t.Run("uses defaults when env vars are unset", func(t *testing.T) {
+		g := NewWithT(t)
+
+		for _, envVar := range []string{
+			certmanager.EnvCertName,
+			certmanager.EnvCertManagerNS,
+			certmanager.EnvCAIssuerName,
+		} {
+			t.Setenv(envVar, "")
+		}
+
+		config := certmanager.DefaultBootstrapConfig()
+		g.Expect(config.CertName).To(Equal("opendatahub-ca"))
+		g.Expect(config.CertManagerNamespace).To(Equal("cert-manager"))
+		g.Expect(config.CAIssuerName).To(Equal("opendatahub-ca-issuer"))
+		g.Expect(config.IssuerName).To(Equal("opendatahub-selfsigned-issuer"))
+	})
+
+	t.Run("overrides fields from env vars", func(t *testing.T) {
+		g := NewWithT(t)
+
+		t.Setenv(certmanager.EnvCertName, "custom-ca")
+		t.Setenv(certmanager.EnvCertManagerNS, "custom-ns")
+		t.Setenv(certmanager.EnvCAIssuerName, "custom-issuer")
+
+		config := certmanager.DefaultBootstrapConfig()
+		g.Expect(config.CertName).To(Equal("custom-ca"))
+		g.Expect(config.CertManagerNamespace).To(Equal("custom-ns"))
+		g.Expect(config.CAIssuerName).To(Equal("custom-issuer"))
+		// IssuerName is not overridable via env var.
+		g.Expect(config.IssuerName).To(Equal("opendatahub-selfsigned-issuer"))
+	})
+
+	t.Run("partial override leaves other fields at defaults", func(t *testing.T) {
+		g := NewWithT(t)
+
+		t.Setenv(certmanager.EnvCertName, "")
+		t.Setenv(certmanager.EnvCertManagerNS, "my-namespace")
+		t.Setenv(certmanager.EnvCAIssuerName, "")
+
+		config := certmanager.DefaultBootstrapConfig()
+		g.Expect(config.CertName).To(Equal("opendatahub-ca"))
+		g.Expect(config.CertManagerNamespace).To(Equal("my-namespace"))
+		g.Expect(config.CAIssuerName).To(Equal("opendatahub-ca-issuer"))
+	})
+
+	t.Run("functional options apply after env overrides", func(t *testing.T) {
+		g := NewWithT(t)
+
+		t.Setenv(certmanager.EnvCAIssuerName, "env-issuer")
+
+		config := certmanager.DefaultBootstrapConfig(certmanager.WithOperatorCert())
+		g.Expect(config.CAIssuerName).To(Equal("env-issuer"))
+		g.Expect(config.OperatorCertConfig).NotTo(BeNil())
+	})
+}
+
 // TestBootstrapCertManagerPKI verifies that NewBootstrapAction adds the cert-manager PKI trust
 // chain resources to the reconciliation request, which are then applied by the deploy action.
 //

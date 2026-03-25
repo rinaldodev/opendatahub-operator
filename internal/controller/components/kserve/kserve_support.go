@@ -63,12 +63,9 @@ func buildCertManagerParams() map[string]string {
 		"NAMESPACE":           cluster.GetApplicationNamespace(),
 	}
 
-	// Env var overrides: written only when the env var is set.
+	// KServe-specific env var overrides not covered by DefaultBootstrapConfig().
 	for key, envVar := range map[string]string{
-		"ISSUER_REF_NAME":           certmanager.EnvCAIssuerName,
 		"ISSUER_REF_KIND":           certmanager.EnvIssuerRefKind,
-		"CA_SECRET_NAME":            certmanager.EnvCertName,
-		"CA_SECRET_NAMESPACE":       certmanager.EnvCertManagerNS,
 		"ISTIO_CA_CERTIFICATE_PATH": certmanager.EnvIstioCACertPath,
 	} {
 		if v := os.Getenv(envVar); v != "" {
