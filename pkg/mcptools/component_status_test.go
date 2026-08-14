@@ -104,14 +104,22 @@ func TestFetchManagedResources(t *testing.T) {
 		t.Helper()
 		s := server.NewMCPServer("test", "0.0.1")
 		registerComponentStatus(s, cl)
-		msg, _ := json.Marshal(map[string]any{
+		msg, err := json.Marshal(map[string]any{
 			"jsonrpc": "2.0", "id": 1, "method": "tools/call",
 			"params": map[string]any{"name": "component_status", "arguments": map[string]any{"component": component}},
 		})
-		respBytes, _ := json.Marshal(s.HandleMessage(context.Background(), msg))
+		if err != nil {
+			t.Fatalf("marshal request: %v", err)
+		}
+		respBytes, err := json.Marshal(s.HandleMessage(context.Background(), msg))
+		if err != nil {
+			t.Fatalf("marshal response: %v", err)
+		}
 		var rpcResp struct {
 			Result struct {
-				Content []struct{ Text string } `json:"content"`
+				Content []struct {
+					Text string `json:"text"`
+				} `json:"content"`
 			} `json:"result"`
 		}
 		if err := json.Unmarshal(respBytes, &rpcResp); err != nil {

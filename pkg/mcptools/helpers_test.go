@@ -57,15 +57,15 @@ func TestGetEnvDefault(t *testing.T) {
 func TestBoolParam(t *testing.T) {
 	tests := []struct {
 		name     string
-		args     map[string]interface{}
+		args     map[string]any
 		param    string
 		fallback bool
 		want     bool
 	}{
-		{"missing param", map[string]interface{}{}, "summary", false, false},
-		{"true value", map[string]interface{}{"summary": true}, "summary", false, true},
-		{"false value", map[string]interface{}{"summary": false}, "summary", true, false},
-		{"non-bool type", map[string]interface{}{"summary": "yes"}, "summary", false, false},
+		{"missing param", map[string]any{}, "summary", false, false},
+		{"true value", map[string]any{"summary": true}, "summary", false, true},
+		{"false value", map[string]any{"summary": false}, "summary", true, false},
+		{"non-bool type", map[string]any{"summary": "yes"}, "summary", false, false},
 		{"nil args", nil, "summary", true, true},
 	}
 	for _, tt := range tests {
@@ -83,17 +83,17 @@ func TestBoolParam(t *testing.T) {
 func TestStringParam(t *testing.T) {
 	tests := []struct {
 		name     string
-		args     map[string]interface{}
+		args     map[string]any
 		param    string
 		fallback string
 		want     string
 	}{
-		{"missing param", map[string]interface{}{}, "sections", "default", "default"},
-		{"empty string", map[string]interface{}{"sections": ""}, "sections", "default", "default"},
-		{"whitespace only", map[string]interface{}{"sections": "  "}, "sections", "default", "default"},
-		{"valid value", map[string]interface{}{"sections": "nodes,pods"}, "sections", "default", "nodes,pods"},
-		{"trimmed", map[string]interface{}{"sections": " nodes "}, "sections", "default", "nodes"},
-		{"non-string type", map[string]interface{}{"sections": 123}, "sections", "default", "default"},
+		{"missing param", map[string]any{}, "sections", "default", "default"},
+		{"empty string", map[string]any{"sections": ""}, "sections", "default", "default"},
+		{"whitespace only", map[string]any{"sections": "  "}, "sections", "default", "default"},
+		{"valid value", map[string]any{"sections": "nodes,pods"}, "sections", "default", "nodes,pods"},
+		{"trimmed", map[string]any{"sections": " nodes "}, "sections", "default", "nodes"},
+		{"non-string type", map[string]any{"sections": 123}, "sections", "default", "default"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -108,15 +108,15 @@ func TestStringParam(t *testing.T) {
 }
 
 func newDSCI(appsNS string) *unstructured.Unstructured {
-	spec := map[string]interface{}{}
+	spec := map[string]any{}
 	if appsNS != "" {
 		spec["applicationsNamespace"] = appsNS
 	}
 	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": "dscinitialization.opendatahub.io/v2",
 			"kind":       "DSCInitialization",
-			"metadata":   map[string]interface{}{"name": "default-dsci"},
+			"metadata":   map[string]any{"name": "default-dsci"},
 			"spec":       spec,
 		},
 	}

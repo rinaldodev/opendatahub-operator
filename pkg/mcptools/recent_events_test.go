@@ -20,10 +20,10 @@ import (
 	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/clusterhealth"
 )
 
-func makeEvent(ns, name, kind, objName, etype, reason, msg string, lastTime time.Time) *corev1.Event {
+func makeEvent(evtName, objName, etype, reason, msg string, lastTime time.Time) *corev1.Event {
 	return &corev1.Event{
-		ObjectMeta:     metav1.ObjectMeta{Name: name, Namespace: ns},
-		InvolvedObject: corev1.ObjectReference{Kind: kind, Name: objName},
+		ObjectMeta:     metav1.ObjectMeta{Name: evtName, Namespace: DefaultAppsNS},
+		InvolvedObject: corev1.ObjectReference{Kind: "Pod", Name: objName},
 		Type:           etype,
 		Reason:         reason,
 		Message:        msg,
@@ -43,23 +43,23 @@ func TestRunRecentEvents(t *testing.T) {
 		wantErr         bool
 	}{
 		{"default args", []client.Object{
-			makeEvent("opendatahub", "evt1", "Pod", "pod-a", "Warning", "BackOff", "back-off", now.Add(-2*time.Minute)),
-			makeEvent("opendatahub", "evt2", "Pod", "pod-b", "Normal", "Scheduled", "assigned", now.Add(-1*time.Minute)),
+			makeEvent("evt1", "pod-a", "Warning", "BackOff", "back-off", now.Add(-2*time.Minute)),
+			makeEvent("evt2", "pod-b", "Normal", "Scheduled", "assigned", now.Add(-1*time.Minute)),
 		}, clusterhealth.RecentEventsConfig{Namespaces: []string{"opendatahub"}}, false, 2, false},
 
 		{"since filter", []client.Object{
-			makeEvent("opendatahub", "recent", "Pod", "pod-a", "Warning", "BackOff", "recent", now.Add(-3*time.Minute)),
-			makeEvent("opendatahub", "old", "Pod", "pod-b", "Warning", "BackOff", "old", now.Add(-10*time.Minute)),
+			makeEvent("recent", "pod-a", "Warning", "BackOff", "recent", now.Add(-3*time.Minute)),
+			makeEvent("old", "pod-b", "Warning", "BackOff", "old", now.Add(-10*time.Minute)),
 		}, clusterhealth.RecentEventsConfig{Namespaces: []string{"opendatahub"}, Since: 5 * time.Minute}, false, 1, false},
 
 		{"event type filter", []client.Object{
-			makeEvent("opendatahub", "warn", "Pod", "pod-a", "Warning", "BackOff", "warning", now.Add(-1*time.Minute)),
-			makeEvent("opendatahub", "norm", "Pod", "pod-b", "Normal", "Scheduled", "normal", now.Add(-1*time.Minute)),
+			makeEvent("warn", "pod-a", "Warning", "BackOff", "warning", now.Add(-1*time.Minute)),
+			makeEvent("norm", "pod-b", "Normal", "Scheduled", "normal", now.Add(-1*time.Minute)),
 		}, clusterhealth.RecentEventsConfig{Namespaces: []string{"opendatahub"}, EventType: "Warning"}, false, 1, false},
 
 		{"event type lowercase", []client.Object{
-			makeEvent("opendatahub", "warn", "Pod", "pod-a", "Warning", "BackOff", "warning", now.Add(-1*time.Minute)),
-			makeEvent("opendatahub", "norm", "Pod", "pod-b", "Normal", "Scheduled", "normal", now.Add(-1*time.Minute)),
+			makeEvent("warn", "pod-a", "Warning", "BackOff", "warning", now.Add(-1*time.Minute)),
+			makeEvent("norm", "pod-b", "Normal", "Scheduled", "normal", now.Add(-1*time.Minute)),
 		}, clusterhealth.RecentEventsConfig{Namespaces: []string{"opendatahub"}, EventType: "warning"}, false, 1, false},
 
 		{"empty result", nil,
@@ -72,7 +72,7 @@ func TestRunRecentEvents(t *testing.T) {
 			clusterhealth.RecentEventsConfig{Namespaces: []string{"opendatahub"}}, true, 0, true},
 
 		{"multi namespace no error", []client.Object{
-			makeEvent("opendatahub", "evt1", "Pod", "pod-a", "Warning", "BackOff", "msg", now.Add(-1*time.Minute)),
+			makeEvent("evt1", "pod-a", "Warning", "BackOff", "msg", now.Add(-1*time.Minute)),
 		}, clusterhealth.RecentEventsConfig{Namespaces: []string{"opendatahub", "other-ns"}}, false, 1, false},
 	}
 
@@ -99,8 +99,8 @@ func TestRunRecentEvents(t *testing.T) {
 func TestRecentEvents_SortOrder(t *testing.T) {
 	now := time.Now()
 	cl := newFakeClient(
-		makeEvent("opendatahub", "older", "Pod", "pod-a", "Warning", "BackOff", "older", now.Add(-3*time.Minute)),
-		makeEvent("opendatahub", "newest", "Pod", "pod-b", "Warning", "BackOff", "newest", now.Add(-1*time.Minute)),
+		makeEvent("older", "pod-a", "Warning", "BackOff", "older", now.Add(-3*time.Minute)),
+		makeEvent("newest", "pod-b", "Warning", "BackOff", "newest", now.Add(-1*time.Minute)),
 	)
 	events, err := clusterhealth.RunRecentEvents(context.Background(), clusterhealth.RecentEventsConfig{
 		Client: cl, Namespaces: []string{"opendatahub"},
@@ -121,7 +121,7 @@ func TestRecentEvents_Count(t *testing.T) {
 
 	for _, count := range []int32{0, 1, 150} {
 		t.Run(fmt.Sprintf("count_%d", count), func(t *testing.T) {
-			evt := makeEvent("opendatahub", "evt1", "Pod", "pod-a", "Warning", "BackOff", "back-off", now.Add(-1*time.Minute))
+			evt := makeEvent("evt1", "pod-a", "Warning", "BackOff", "back-off", now.Add(-1*time.Minute))
 			evt.Count = count
 			cl := newFakeClient(evt)
 
@@ -173,8 +173,10 @@ func TestRecentEvents_ErrorClients(t *testing.T) {
 
 			var rpc struct {
 				Result struct {
-					Content []struct{ Text string } `json:"content"`
-					IsError bool                    `json:"isError"`
+					Content []struct {
+						Text string `json:"text"`
+					} `json:"content"`
+					IsError bool `json:"isError"`
 				} `json:"result"`
 			}
 			if err := json.Unmarshal(raw, &rpc); err != nil {
@@ -197,11 +199,11 @@ func TestDiscoverODHNamespaces(t *testing.T) {
 		wantNS string
 	}{
 		{"with DSCI", &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "dscinitialization.opendatahub.io/v2",
 				"kind":       "DSCInitialization",
-				"metadata":   map[string]interface{}{"name": "default-dsci"},
-				"spec":       map[string]interface{}{"applicationsNamespace": "custom-apps"},
+				"metadata":   map[string]any{"name": "default-dsci"},
+				"spec":       map[string]any{"applicationsNamespace": "custom-apps"},
 			},
 		}, "custom-apps"},
 		{"no DSCI", nil, DefaultAppsNS},

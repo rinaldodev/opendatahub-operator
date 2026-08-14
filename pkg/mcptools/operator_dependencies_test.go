@@ -15,7 +15,8 @@ import (
 	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/clusterhealth"
 )
 
-func makeDeployment(ns, name string, ready, replicas int32) *appsv1.Deployment {
+func makeDeployment(ns, name string, ready int32) *appsv1.Deployment {
+	replicas := int32(1)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
 		Spec: appsv1.DeploymentSpec{
@@ -49,12 +50,18 @@ func callDeps(t *testing.T, cl client.Client, args map[string]any) (string, bool
 	s := server.NewMCPServer("test", "0.0.1")
 	registerOperatorDependencies(s, cl)
 
-	msg, _ := json.Marshal(map[string]any{
+	msg, err := json.Marshal(map[string]any{
 		"jsonrpc": "2.0", "id": 1, "method": "tools/call",
 		"params": map[string]any{"name": "operator_dependencies", "arguments": args},
 	})
+	if err != nil {
+		t.Fatalf("marshal request: %v", err)
+	}
 	resp := s.HandleMessage(context.Background(), msg)
-	respBytes, _ := json.Marshal(resp)
+	respBytes, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("marshal response: %v", err)
+	}
 
 	var rpcResp struct {
 		Result struct {
@@ -76,11 +83,11 @@ func callDeps(t *testing.T, cl client.Client, args map[string]any) (string, bool
 
 func TestOperatorDependencies(t *testing.T) {
 	cl := newFakeClient(
-		makeDeployment(DefaultOperatorNS, DefaultOperatorDeploy, 1, 1),
+		makeDeployment(DefaultOperatorNS, DefaultOperatorDeploy, 1),
 		makePod(DefaultOperatorNS, "op-pod", "Running", map[string]string{"app": DefaultOperatorDeploy}),
-		makeDeployment("cert-manager-operator", "cert-manager-operator", 1, 1),
+		makeDeployment("cert-manager-operator", "cert-manager-operator", 1),
 		makePod("cert-manager-operator", "cm-pod", "Running", map[string]string{"app": "cert-manager-operator"}),
-		makeDeployment("openshift-tempo-operator", "tempo-operator", 0, 1),
+		makeDeployment("openshift-tempo-operator", "tempo-operator", 0),
 		makePod("openshift-tempo-operator", "tempo-pod", "Pending", map[string]string{"app": "tempo-operator"}),
 	)
 
@@ -158,11 +165,11 @@ func TestOperatorDependencies(t *testing.T) {
 	}
 
 	healthyCl := newFakeClient(
-		makeDeployment(DefaultOperatorNS, DefaultOperatorDeploy, 1, 1),
+		makeDeployment(DefaultOperatorNS, DefaultOperatorDeploy, 1),
 		makePod(DefaultOperatorNS, "op-pod", "Running", map[string]string{"app": DefaultOperatorDeploy}),
-		makeDeployment("cert-manager-operator", "cert-manager-operator", 1, 1),
+		makeDeployment("cert-manager-operator", "cert-manager-operator", 1),
 		makePod("cert-manager-operator", "cm-pod", "Running", map[string]string{"app": "cert-manager-operator"}),
-		makeDeployment("openshift-tempo-operator", "tempo-operator", 1, 1),
+		makeDeployment("openshift-tempo-operator", "tempo-operator", 1),
 		makePod("openshift-tempo-operator", "tempo-pod", "Running", map[string]string{"app": "tempo-operator"}),
 	)
 

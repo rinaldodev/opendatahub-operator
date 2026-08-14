@@ -69,7 +69,9 @@ func registerComponentStatus(s *server.MCPServer, kubeClient client.Client) {
 		mcp.WithString("component", mcp.Required(),
 			mcp.Description("Component name, e.g. kserve, dashboard, workbenches")),
 		mcp.WithString("applications_namespace",
-			mcp.Description("Apps namespace. Auto-discovered from DSCI if not provided. Returns an error if DSCI discovery fails due to RBAC or missing CRD. Falls back to E2E_TEST_APPLICATIONS_NAMESPACE env var or 'opendatahub'.")),
+			mcp.Description("Apps namespace. Auto-discovered from DSCI if not provided. "+
+				"Returns an error if DSCI discovery fails due to RBAC or missing CRD. "+
+				"Falls back to E2E_TEST_APPLICATIONS_NAMESPACE env var or 'opendatahub'.")),
 	)
 
 	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -108,8 +110,12 @@ func registerComponentStatus(s *server.MCPServer, kubeClient client.Client) {
 
 		response := struct {
 			*clusterhealth.ComponentStatusResult
+
 			ManagedResources []ManagedResource `json:"managedResources"`
-		}{result, managed}
+		}{
+			ComponentStatusResult: result,
+			ManagedResources:      managed,
+		}
 
 		data, err := json.MarshalIndent(response, "", "  ")
 		if err != nil {

@@ -28,7 +28,9 @@ func registerPlatformHealth(s *server.MCPServer, kubeClient client.Client) {
 		mcp.WithString("operator_namespace",
 			mcp.Description("Operator namespace. Auto-discovered from env or defaults to opendatahub-operator-system.")),
 		mcp.WithString("applications_namespace",
-			mcp.Description("Apps namespace. Auto-discovered from DSCI if not provided. Returns an error if DSCI discovery fails due to RBAC or missing CRD. Falls back to env var or 'opendatahub' when DSCI is absent.")),
+			mcp.Description("Apps namespace. Auto-discovered from DSCI if not provided. "+
+				"Returns an error if DSCI discovery fails due to RBAC or missing CRD. "+
+				"Falls back to env var or 'opendatahub' when DSCI is absent.")),
 		mcp.WithBoolean("summary",
 			mcp.Description("If true, return a compact summary instead of the full report. Default: true")),
 	)

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -149,9 +149,9 @@ func RunRecentEvents(ctx context.Context, cfg RecentEventsConfig) ([]EventInfo, 
 		var msgs []string
 		for ns, err := range errs {
 			switch {
-			case apierrors.IsNotFound(err):
+			case k8serr.IsNotFound(err):
 				msgs = append(msgs, fmt.Sprintf("%s: namespace not found", ns))
-			case apierrors.IsForbidden(err):
+			case k8serr.IsForbidden(err):
 				msgs = append(msgs, fmt.Sprintf("%s: forbidden (missing RBAC permissions)", ns))
 			default:
 				msgs = append(msgs, fmt.Sprintf("%s: %v", ns, err))

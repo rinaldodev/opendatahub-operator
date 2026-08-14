@@ -19,7 +19,7 @@ func newFakeClient(objs ...client.Object) client.Client {
 }
 
 // callTool builds a config from args, runs clusterhealth, and verifies JSON round-trip.
-func callTool(t *testing.T, cl client.Client, args map[string]interface{}) clusterhealth.Report {
+func callTool(t *testing.T, cl client.Client, args map[string]any) clusterhealth.Report {
 	t.Helper()
 	req := mcp.CallToolRequest{}
 	req.Params.Arguments = args
@@ -58,14 +58,14 @@ func TestPlatformHealth(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		args         map[string]interface{}
+		args         map[string]any
 		wantSections []string
 	}{
 		{"default args", nil, nil},
-		{"sections filter", map[string]interface{}{"sections": "nodes,pods"}, []string{"nodes", "pods"}},
-		{"layer filter", map[string]interface{}{"layer": "infrastructure"}, []string{"nodes", "quotas"}},
-		{"sections precedence", map[string]interface{}{"sections": "nodes", "layer": "operator"}, []string{"nodes"}},
-		{"custom namespace", map[string]interface{}{"operator_namespace": "custom-ns", "sections": "nodes"}, []string{"nodes"}},
+		{"sections filter", map[string]any{"sections": "nodes,pods"}, []string{"nodes", "pods"}},
+		{"layer filter", map[string]any{"layer": "infrastructure"}, []string{"nodes", "quotas"}},
+		{"sections precedence", map[string]any{"sections": "nodes", "layer": "operator"}, []string{"nodes"}},
+		{"custom namespace", map[string]any{"operator_namespace": "custom-ns", "sections": "nodes"}, []string{"nodes"}},
 	}
 
 	for _, tt := range tests {
@@ -111,7 +111,7 @@ func TestSummarizeReport(t *testing.T) {
 		{"unhealthy dsc missing", "dsc", false, "dsc", "error"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			report := callTool(t, newFakeClient(), map[string]interface{}{"sections": tt.sections})
+			report := callTool(t, newFakeClient(), map[string]any{"sections": tt.sections})
 			summary := summarizeReport(&report)
 
 			if summary.Healthy != tt.wantHealthy {

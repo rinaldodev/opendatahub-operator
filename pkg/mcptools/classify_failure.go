@@ -28,7 +28,9 @@ func registerClassifyFailure(s *server.MCPServer, kubeClient client.Client) {
 		mcp.WithString("operator_namespace",
 			mcp.Description("Operator namespace. Auto-discovered from E2E_TEST_OPERATOR_NAMESPACE env var or defaults to opendatahub-operator-system.")),
 		mcp.WithString("applications_namespace",
-			mcp.Description("Apps namespace. Auto-discovered from DSCI if not provided. Returns an error if DSCI discovery fails due to RBAC or missing CRD. Falls back to E2E_TEST_APPLICATIONS_NAMESPACE env var or 'opendatahub'.")),
+			mcp.Description("Apps namespace. Auto-discovered from DSCI if not provided. "+
+				"Returns an error if DSCI discovery fails due to RBAC or missing CRD. "+
+				"Falls back to E2E_TEST_APPLICATIONS_NAMESPACE env var or 'opendatahub'.")),
 	)
 
 	s.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

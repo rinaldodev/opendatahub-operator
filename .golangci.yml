@@ -60,6 +60,16 @@ linters:
         - v1beta2
         # K8s API group strings — used in GVK declarations
         - networking.istio.io
+        # K8s condition / status field values — self-documenting as inline literals
+        - status
+        - Running
+        - "True"
+        - type
+        - node
+        - resource
+        - nodes
+        - operator
+        - image-pull
       min-occurrences: 8
     gocritic:
       enabled-checks:
@@ -159,6 +169,12 @@ linters:
       - linters:
           - lll
         path: internal/controller/cloudmanager/common/kubebuilder_rbac.go
+      - linters:
+          - testpackage
+        path: pkg/mcptools/(.+)_test\.go
+      - linters:
+          - maintidx
+        path: pkg/failureclassifier/classifier_test\.go
       - linters:
           - goconst
         path: _test\.go

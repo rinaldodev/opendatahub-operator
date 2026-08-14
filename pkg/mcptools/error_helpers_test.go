@@ -2,7 +2,7 @@ package mcptools
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -30,7 +30,7 @@ func newErrorClient(err error) client.Client {
 func newForbiddenClient() client.Client {
 	return newErrorClient(k8serr.NewForbidden(
 		schema.GroupResource{Resource: "resources"},
-		"", fmt.Errorf("forbidden")))
+		"", errors.New("forbidden")))
 }
 
 func newNoMatchClient() client.Client {
