@@ -245,7 +245,7 @@ spec:
 
 #### Download manifests
 
-The `manifest-tools download` command (in `cmd/manifest-tools/`) fetches manifests from remote git repositories. It reads `manifests-config.yaml` for component definitions and their manifest locations.
+The `manifest-tools download` command (in `cmd/tools/manifest-tools/`) fetches manifests from remote git repositories. It reads `manifests-config.yaml` for component definitions and their manifest locations.
 
 #### Structure of `manifests-config.yaml`
 
@@ -271,7 +271,7 @@ You can override a component’s source using the `--component` flag:
 ```shell
 make get-manifests
 # or with overrides:
-go run -C ./cmd/manifest-tools main.go download --component dashboard=maistra:odh-dashboard:test-manifests:manifests
+go run -C ./cmd/tools/manifest-tools main.go download --component dashboard=maistra:odh-dashboard:test-manifests:manifests
 ```
 
 If the component key does not exist in `manifests-config.yaml`, the command will fail.

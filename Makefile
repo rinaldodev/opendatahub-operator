@@ -329,7 +329,7 @@ kube-lint: prepare ## Run kube-linter against rendered manifests.
 
 .PHONY: get-manifests
 get-manifests: ## Fetch components manifests from remote git repo
-	go run -C ./cmd/manifest-tools main.go download --config $(CURDIR)/manifests-config.yaml --platform $(ODH_PLATFORM_TYPE) --manifests-dir $(CURDIR)/opt/manifests --charts-dir $(CURDIR)/opt/charts
+	go run -C ./cmd/tools/manifest-tools main.go download --config $(CURDIR)/manifests-config.yaml --platform $(ODH_PLATFORM_TYPE) --manifests-dir $(CURDIR)/opt/manifests --charts-dir $(CURDIR)/opt/charts
 CLEANFILES += opt/manifests/* opt/charts/*
 
 .PHONY: update-rhai-images
@@ -353,28 +353,28 @@ validate-related-images: yq ## Validate RELATED_IMAGE_* names against build conf
 
 .PHONY: resolve-image-digests
 resolve-image-digests: ## Resolve image digests from Build-Config and update manifests-config.yaml
-	go run -C ./cmd/manifest-tools main.go resolve-digests --config $(CURDIR)/manifests-config.yaml --manifests-dir $(CURDIR)/opt/manifests
+	go run -C ./cmd/tools/manifest-tools main.go resolve-digests --config $(CURDIR)/manifests-config.yaml --manifests-dir $(CURDIR)/opt/manifests
 
 .PHONY: update-refs-shas
 update-refs-shas: ## Update branch@sha refs to latest commit SHAs from GitHub (requires GITHUB_TOKEN)
-	go run -C ./cmd/manifest-tools main.go update-refs shas --config $(CURDIR)/manifests-config.yaml
+	go run -C ./cmd/tools/manifest-tools main.go update-refs shas --config $(CURDIR)/manifests-config.yaml
 
 .PHONY: update-refs-tags
 update-refs-tags: ## Parse tracker issue and update ODH component refs (requires TRACKER_URL)
-	go run -C ./cmd/manifest-tools main.go update-refs tags --tracker-url $(TRACKER_URL) --config $(CURDIR)/manifests-config.yaml
+	go run -C ./cmd/tools/manifest-tools main.go update-refs tags --tracker-url $(TRACKER_URL) --config $(CURDIR)/manifests-config.yaml
 
 .PHONY: update-refs-rhoai-branch
 update-refs-rhoai-branch: ## Update all RHOAI refs to a new branch (requires GITHUB_TOKEN, NEW_RHOAI_BRANCH)
-	go run -C ./cmd/manifest-tools main.go update-refs rhoai-branch --branch $(NEW_RHOAI_BRANCH) --config $(CURDIR)/manifests-config.yaml
+	go run -C ./cmd/tools/manifest-tools main.go update-refs rhoai-branch --branch $(NEW_RHOAI_BRANCH) --config $(CURDIR)/manifests-config.yaml
 
 
 .PHONY: apply-image-overrides
 apply-image-overrides: ## Apply image overrides to manager.yaml (for make deploy)
-	go run -C ./cmd/manifest-tools main.go apply-deploy --config $(CURDIR)/manifests-config.yaml --platform $(ODH_PLATFORM_TYPE) --manager-file $(CURDIR)/config/manager/manager.yaml
+	go run -C ./cmd/tools/manifest-tools main.go apply-deploy --config $(CURDIR)/manifests-config.yaml --platform $(ODH_PLATFORM_TYPE) --manager-file $(CURDIR)/config/manager/manager.yaml
 
 .PHONY: apply-image-overrides-olm
 apply-image-overrides-olm: ## Apply image overrides to OLM Subscription (for operator-sdk run bundle)
-	go run -C ./cmd/manifest-tools main.go apply-olm --config $(CURDIR)/manifests-config.yaml --platform $(ODH_PLATFORM_TYPE) --namespace $(OPERATOR_NAMESPACE) --package $(OPERATOR_PACKAGE)
+	go run -C ./cmd/tools/manifest-tools main.go apply-olm --config $(CURDIR)/manifests-config.yaml --platform $(ODH_PLATFORM_TYPE) --namespace $(OPERATOR_NAMESPACE) --package $(OPERATOR_PACKAGE)
 
 # Default to standard sed command
 SED_COMMAND = sed
@@ -542,7 +542,7 @@ new-component: $(LOCALBIN)/component-codegen
 	$(MAKE) generate manifests api-docs bundle fmt
 
 $(LOCALBIN)/component-codegen: | $(LOCALBIN)
-	cd ./cmd/component-codegen && go mod tidy && go build -o $@
+	go build -C ./cmd/tools/component-codegen -o $(abspath $@) .
 
 WARNINGMSG = "provided API should have an example annotation"
 .PHONY: bundle
@@ -679,7 +679,7 @@ $(ENVTEST): $(LOCALBIN)
 test: unit-test e2e-test
 
 .PHONY: unit-test
-unit-test: unit-test-operator unit-test-clusterhealth unit-test-manifest-tools unit-test-scoperules unit-test-e2e-scope-completeness
+unit-test: unit-test-operator unit-test-tools unit-test-e2e-scope-completeness
 
 .PHONY: unit-test-operator
 unit-test-operator: envtest ginkgo # directly use ginkgo since the framework is not compatible with go test parallel
@@ -700,21 +700,12 @@ unit-test-operator: envtest ginkgo # directly use ginkgo since the framework is 
         		--cover \
         		--coverprofile=cover.out \
         		--succinct \
-        		--skip-package=pkg/clusterhealth,pkg/mcptools,pkg/scoperules,cmd/health-check \
         		$(TEST_SRC)
 CLEANFILES += cover.out
 
-.PHONY: unit-test-clusterhealth
-unit-test-clusterhealth:
-	cd pkg/clusterhealth && go test -cover ./...
-
-.PHONY: unit-test-manifest-tools
-unit-test-manifest-tools: ## cmd/manifest-tools is a separate Go module (own go.mod), so go test ./... from root never reaches it
-	go -C cmd/manifest-tools test ./...
-
-.PHONY: unit-test-scoperules
-unit-test-scoperules:
-	cd pkg/scoperules && go test -cover ./...
+.PHONY: unit-test-tools
+unit-test-tools:
+	go -C cmd/tools test ./...
 
 .PHONY: unit-test-e2e-scope-completeness
 unit-test-e2e-scope-completeness: ## Registry-completeness checks for tests/e2e/scripts/e2e-scope-rules.yaml. No cluster needed, so these run outside ginkgo's TEST_SRC and outside make e2e-test's ^TestOdhOperator filter.
@@ -769,19 +760,19 @@ check-prometheus-alert-unit-tests: $(PROMETHEUS_ALERT_RULES) $(YQ)
 	YQ=$(YQ) ./tests/prometheus_unit_tests/scripts/check_alert_tests.sh $(PROMETHEUS_RULES_DIR) $(ALERT_SEVERITY)
 CLEANFILES += $(PROMETHEUS_ALERT_RULES)
 
-# Cluster health targets (cluster-health, cluster-health-*, etc.) are in cmd/health-check/Makefile.
-ifneq (,$(wildcard cmd/health-check/Makefile))
-include cmd/health-check/Makefile
+# Cluster health targets (cluster-health, cluster-health-*, etc.) are in cmd/tools/health-check/Makefile.
+ifneq (,$(wildcard cmd/tools/health-check/Makefile))
+include cmd/tools/health-check/Makefile
 endif
 
-# MCP server targets (mcp-server, mcp-server-test) are in cmd/mcp-server/Makefile.
-ifneq (,$(wildcard cmd/mcp-server/Makefile))
-include cmd/mcp-server/Makefile
+# MCP server targets (mcp-server, mcp-server-test) are in cmd/tools/mcp-server/Makefile.
+ifneq (,$(wildcard cmd/tools/mcp-server/Makefile))
+include cmd/tools/mcp-server/Makefile
 endif
 
 .PHONY: e2e-test e2e
 e2e: e2e-test ## Alias for e2e-test
-# Path-based e2e test scoping (cmd/manifest-tools' resolve-e2e-scope subcommand)
+# Path-based e2e test scoping (cmd/tools/manifest-tools' resolve-e2e-scope subcommand)
 # runs and logs its decision whenever E2E_TEST_COMPONENT and E2E_TEST_SERVICE are
 # both unset (e.g. not already set explicitly by e2e-test-xks). Only when
 # E2E_AUTO_RESOLVE=true does it narrow what actually runs; otherwise it only logs.
@@ -814,7 +805,7 @@ e2e-test: apply-image-overrides-olm
 endif
 e2e-test:
 	@if [ -z "$${E2E_TEST_COMPONENT:-}" ] && [ -z "$${E2E_TEST_SERVICE:-}" ]; then \
-		if resolved=$$(go run -C ./cmd/manifest-tools main.go --config $(CURDIR)/manifests-config.yaml resolve-e2e-scope) \
+		if resolved=$$(go run -C ./cmd/tools/manifest-tools main.go --config $(CURDIR)/manifests-config.yaml resolve-e2e-scope) \
 			&& echo "$$resolved" | grep -q '^COMPONENTS=' \
 			&& echo "$$resolved" | grep -q '^SERVICES='; then \
 			components=$$(echo "$$resolved" | grep '^COMPONENTS=' | cut -d= -f2); \
@@ -831,7 +822,7 @@ e2e-test:
 			echo "SELECTIVE-E2E: could not resolve affected components -- running full suite"; \
 		fi; \
 	fi; \
-	go run -C ./cmd/test-retry main.go e2e --verbose --working-dir=$(CURDIR) $(if $(JUNIT_OUTPUT_PATH),--junit-output=$(JUNIT_OUTPUT_PATH)) -- ${E2E_TEST_FLAGS}
+	go run -C ./cmd/tools/test-retry main.go e2e --verbose --working-dir=$(CURDIR) $(if $(JUNIT_OUTPUT_PATH),--junit-output=$(JUNIT_OUTPUT_PATH)) -- ${E2E_TEST_FLAGS}
 
 .PHONY: e2e-test-single
 e2e-test-single:
@@ -885,7 +876,7 @@ kind-delete: ## Delete KinD Cluster
 	kind delete cluster --name $(CLUSTER_NAME)
 
 unit-test-cli:
-	go -C ./cmd/test-retry/ test ./...
+	go -C ./cmd/tools/test-retry/ test ./...
 
 ##@ Cloud Controller Manager (ccm)
 

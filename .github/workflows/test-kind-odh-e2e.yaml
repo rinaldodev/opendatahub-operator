@@ -20,7 +20,7 @@ on:
       - 'pkg/operatorconfig/cloudmanager.go'
       - 'pkg/utils/test/cloudmanager/**'
       - 'config/rhaii/**'
-      - 'cmd/manifest-tools/**'
+      - 'cmd/tools/manifest-tools/**'
       - 'manifests-config.yaml'
       - '.github/workflows/test-kind-odh-e2e.yaml'
 

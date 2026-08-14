@@ -23,7 +23,7 @@ framework_dirs:
 # manifest_files — files whose *content* diff (not just "did it change")
 # needs structured parsing to attribute changes to specific components
 # ------------------------------------------------------------------------
-# manifests-config.yaml changes are diffed structurally by cmd/manifest-tools's
+# manifests-config.yaml changes are diffed structurally by cmd/tools/manifest-tools's
 # resolve-e2e-scope subcommand, not text-matched here.
 manifest_files:
   - manifests-config.yaml
@@ -60,8 +60,8 @@ patterns:
 #   - cloudmanager's footprint, which is real, tested code already covered
 #     by its own separate e2e mechanism
 # Anything not listed here falls through to `shared` by default. That
-# includes other cmd/ tooling, such as cmd/manifest-tools itself and
-# cmd/test-retry (the e2e runner), so a change to the resolver or the
+# includes other cmd/ tooling, such as cmd/tools/manifest-tools itself and
+# cmd/tools/test-retry (the e2e runner), so a change to the resolver or the
 # runner is always treated as risky, never silently excluded.
 # `names` covers resolved *names* (not paths) that belong to a separately
 # tested subsystem: manifests-config.yaml's `ccmCharts` section lists Cloud

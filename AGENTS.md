@@ -61,7 +61,7 @@ For modularized components, also check:
 
 ## Cluster Diagnostics
 
-Use the `/diagnose` skill (Claude Code) to investigate cluster health, troubleshoot ODH failures, or diagnose component issues. Other agents MUST follow the diagnostic methodology in `cmd/mcp-server/prompts/diagnostic.md` using the `opendatahub-health` MCP server tools — do not improvise a diagnostic workflow.
+Use the `/diagnose` skill (Claude Code) to investigate cluster health, troubleshoot ODH failures, or diagnose component issues. Other agents MUST follow the diagnostic methodology in `cmd/tools/mcp-server/prompts/diagnostic.md` using the `opendatahub-health` MCP server tools — do not improvise a diagnostic workflow.
 
 ## Documentation Index
 

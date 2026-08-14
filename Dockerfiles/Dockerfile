@@ -8,9 +8,11 @@ ARG TARGETPLATFORM
 FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:$GOLANG_VERSION as manifest-tools-builder
 USER root
 WORKDIR /workspace
-COPY cmd/manifest-tools/ cmd/manifest-tools/
+COPY go.mod go.sum go.work ./
+COPY cmd/tools/go.mod cmd/tools/go.sum ./cmd/tools/
+COPY cmd/tools/manifest-tools/ cmd/tools/manifest-tools/
 COPY pkg/scoperules/ pkg/scoperules/
-RUN cd cmd/manifest-tools && CGO_ENABLED=0 go build -ldflags="-s -w" -o /manifest-tools main.go
+RUN go build -C cmd/tools/manifest-tools -ldflags="-s -w" -o /manifest-tools .
 
 ################################################################################
 FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/toolbox as manifests
@@ -51,14 +53,7 @@ ARG TARGETARCH
 USER root
 WORKDIR /workspace
 # Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-COPY pkg/clusterhealth/go.mod pkg/clusterhealth/go.mod
-COPY pkg/clusterhealth/go.sum pkg/clusterhealth/go.sum
-COPY pkg/failureclassifier/go.mod pkg/failureclassifier/go.mod
-COPY pkg/failureclassifier/go.sum pkg/failureclassifier/go.sum
-COPY pkg/scoperules/go.mod pkg/scoperules/go.mod
-COPY pkg/scoperules/go.sum pkg/scoperules/go.sum
+COPY go.mod go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download

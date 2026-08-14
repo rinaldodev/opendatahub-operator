@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/opendatahub-io/opendatahub-operator/pkg/clusterhealth"
+	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/clusterhealth"
 )
 
 var (

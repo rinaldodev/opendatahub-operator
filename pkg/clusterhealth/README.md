@@ -2,7 +2,7 @@
 
 Library for running health and diagnostics checks against a Kubernetes cluster. It returns structured data only; callers decide logging and formatting.
 
-This is a **standalone Go module** (`github.com/opendatahub-io/opendatahub-operator/pkg/clusterhealth`) that can be imported without pulling in the full operator dependency tree. Its only runtime dependencies are `controller-runtime`, `client-go`, and `k8s.io/apimachinery`.
+This package lives in the operator module (`github.com/opendatahub-io/opendatahub-operator/v2/pkg/clusterhealth`). Its runtime dependencies are `controller-runtime`, `client-go`, and `k8s.io/apimachinery`.
 
 ## Quick start
 
@@ -11,7 +11,7 @@ Build a `Config` with your controller-runtime client and namespace/CR names, the
 ```go
 import (
 	"context"
-	"github.com/opendatahub-io/opendatahub-operator/pkg/clusterhealth"
+	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/clusterhealth"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -136,25 +136,24 @@ To add health checks for a new Custom Resource (CR) that has `status.conditions`
 
 7. **Optional – custom unhealthy logic** (`pkg/clusterhealth/cr_helpers.go`): By default, any condition with `status != True` is reported as unhealthy. To override (e.g. ignore certain condition types or respect `managementState: Removed`), add an entry to `kindUnhealthyCheckers` keyed by the CR’s **Kind** and implement an `UnhealthyChecker`: `func(obj map[string]interface{}, conditions []ConditionSummary) []string` returning messages for conditions that count as unhealthy.
 
-8. **CLI** (`cmd/health-check/main.go`): In `loadConfig`, set the new Config field (e.g. `MyCR: types.NamespacedName{}`). The `-sections` and `-layer` flags already accept section names by string, so the new section is selectable as soon as it appears in `sections.go`.
+8. **CLI** (`cmd/tools/health-check/main.go`): In `loadConfig`, set the new Config field (e.g. `MyCR: types.NamespacedName{}`). The `-sections` and `-layer` flags already accept section names by string, so the new section is selectable as soon as it appears in `sections.go`.
 
 The CR must expose `status.conditions` as a slice of objects with `type`, `status`, and optional `message`. If `status.conditions` is missing, the section gets no error and empty conditions; if it is present but malformed (e.g. not a slice), the section’s `Error` is set.
 
 ## CLI
 
-The `cmd/health-check` binary uses this library. It is its own Go module (`cmd/health-check/go.mod`), so run it from within that directory. Set the same env vars as e2e (`E2E_TEST_OPERATOR_NAMESPACE`, `E2E_TEST_APPLICATIONS_NAMESPACE`, `E2E_TEST_WORKBENCHES_NAMESPACE`, `E2E_TEST_DSC_MONITORING_NAMESPACE`), then:
+The `cmd/tools/health-check` binary uses this library (part of the `cmd/tools` Go module). Set the same env vars as e2e (`E2E_TEST_OPERATOR_NAMESPACE`, `E2E_TEST_APPLICATIONS_NAMESPACE`, `E2E_TEST_WORKBENCHES_NAMESPACE`, `E2E_TEST_DSC_MONITORING_NAMESPACE`), then:
 
 ```bash
-cd cmd/health-check
-go run .                              # all sections, summary
-go run . -l                           # all sections, long format (conditions/details)
-go run . -json                        # full report as JSON
-go run . -layer=infrastructure
-go run . -layer=operator
-go run . -sections=nodes,dsci,dsc -l
+go run -C cmd/tools/health-check .
+go run -C cmd/tools/health-check . -l                           # all sections, long format (conditions/details)
+go run -C cmd/tools/health-check . -json                        # full report as JSON
+go run -C cmd/tools/health-check . -layer=infrastructure
+go run -C cmd/tools/health-check . -layer=operator
+go run -C cmd/tools/health-check . -sections=nodes,dsci,dsc -l
 ```
 
-Makefile targets (from repo root, see `cmd/health-check/Makefile`):
+Makefile targets (from repo root, see `cmd/tools/health-check/Makefile`):
 
 - `make cluster-health` — all sections
 - `make cluster-health-l` — all sections, long format

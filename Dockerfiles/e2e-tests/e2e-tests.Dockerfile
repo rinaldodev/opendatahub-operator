@@ -9,14 +9,7 @@ USER root
 WORKDIR /workspace
 
 # Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-COPY pkg/clusterhealth/go.mod pkg/clusterhealth/go.mod
-COPY pkg/clusterhealth/go.sum pkg/clusterhealth/go.sum
-COPY pkg/failureclassifier/go.mod pkg/failureclassifier/go.mod
-COPY pkg/failureclassifier/go.sum pkg/failureclassifier/go.sum
-COPY pkg/scoperules/go.mod pkg/scoperules/go.mod
-COPY pkg/scoperules/go.sum pkg/scoperules/go.sum
+COPY go.mod go.sum
 
 RUN go mod download
 
@@ -24,7 +17,9 @@ RUN go mod download
 COPY api/ api/
 COPY internal/ internal/
 COPY cmd/main.go cmd/main.go
-COPY cmd/test-retry/ cmd/test-retry/
+COPY go.work go.work
+COPY cmd/tools/go.mod cmd/tools/go.sum ./cmd/tools/
+COPY cmd/tools/test-retry/ cmd/tools/test-retry/
 COPY pkg/ pkg/
 COPY tests/ tests/
 
@@ -32,7 +27,7 @@ COPY tests/ tests/
 RUN CGO_ENABLED=${CGO_ENABLED} GOOS=linux GOARCH=${TARGETARCH} go test -c ./tests/e2e/ -o e2e-tests
 
 # Build test-retry CLI for JUnit enrichment
-RUN cd cmd/test-retry && CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -o ../../test-retry .
+RUN go build -C cmd/tools/test-retry -ldflags="-s -w" -o test-retry .
 
 ################################################################################
 FROM golang:$GOLANG_VERSION

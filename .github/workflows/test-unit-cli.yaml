@@ -6,7 +6,8 @@ on:
       - rhoai
   pull_request:
       paths:
-      - 'cmd/test-retry/**'
+      - 'cmd/tools/**'
+      - 'go.work'
 jobs:
   unit-test:
     name: Run CLI tests
@@ -18,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-          go-version-file: ./cmd/test-retry/go.mod
+          go-version-file: go.mod
 
       - name: Run Unit Tests
         run: make unit-test-cli

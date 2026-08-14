@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/opendatahub-io/opendatahub-operator/pkg/clusterhealth"
+	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/clusterhealth"
 )
 
 type ManagedResource struct {

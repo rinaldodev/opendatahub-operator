@@ -10,14 +10,7 @@ ARG BUNDLE_IMG
 USER root
 WORKDIR /workspace
 # Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-COPY pkg/clusterhealth/go.mod pkg/clusterhealth/go.mod
-COPY pkg/clusterhealth/go.sum pkg/clusterhealth/go.sum
-COPY pkg/failureclassifier/go.mod pkg/failureclassifier/go.mod
-COPY pkg/failureclassifier/go.sum pkg/failureclassifier/go.sum
-COPY pkg/scoperules/go.mod pkg/scoperules/go.mod
-COPY pkg/scoperules/go.sum pkg/scoperules/go.sum
+COPY go.mod go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download

@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/opendatahub-io/opendatahub-operator/pkg/clusterhealth"
+	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/clusterhealth"
 )
 
 func TestComponentStatus(t *testing.T) {
